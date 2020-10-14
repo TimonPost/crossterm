@@ -38,18 +38,23 @@ fn print_events() -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    let result = std::panic::catch_unwind(|| {
+
     println!("{}", HELP);
 
-    enable_raw_mode()?;
+    enable_raw_mode().expect("Can not enable raw mode");
 
     let mut stdout = stdout();
-    execute!(stdout, EnableMouseCapture)?;
+    execute!(stdout, EnableMouseCapture).expect("Can not enablemouse");
 
     if let Err(e) = print_events() {
         println!("Error: {:?}\r", e);
     }
 
-    execute!(stdout, DisableMouseCapture)?;
+    execute!(stdout, DisableMouseCapture).expect("Can not disable mouse");
+    });
 
-    disable_raw_mode()
+    println!("result: {:?}", result);
+    disable_raw_mode().expect("Can not disable raw mode");
+    Ok(())
 }

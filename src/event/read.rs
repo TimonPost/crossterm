@@ -24,7 +24,12 @@ impl Default for InternalEventReader {
         #[cfg(unix)]
         let source = UnixInternalEventSource::new();
 
-        let source = source.ok().map(|x| Box::new(x) as Box<dyn EventSource>);
+        let source = match source {
+            Ok(source) => Some(Box::new(source) as Box<dyn EventSource>),
+            Err(e) => {
+                panic!("Event source can not be initialized: {:?}", e);
+            }
+        };
 
         InternalEventReader {
             source,

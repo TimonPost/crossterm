@@ -1,11 +1,11 @@
 //! UNIX related logic for terminal manipulation.
 use std::{io, mem, process, sync::Mutex};
 
-use crate::event::sys::unix::file_descriptor::FileDesc;
+use crate::event::sys::unix::file_descriptor::{tty_fd, FileDesc};
 use lazy_static::lazy_static;
 use libc::{
-    cfmakeraw, ioctl, tcgetattr, tcsetattr, termios as Termios, winsize, STDIN_FILENO,
-    STDOUT_FILENO, TCSANOW, TIOCGWINSZ,
+    cfmakeraw, ioctl, tcgetattr, tcsetattr, termios as Termios, winsize, STDOUT_FILENO, TCSANOW,
+    TIOCGWINSZ,
 };
 
 use crate::error::{ErrorKind, Result};
@@ -117,15 +117,18 @@ fn raw_terminal_attr(termios: &mut Termios) {
 }
 
 fn get_terminal_attr() -> Result<Termios> {
+    let fd = tty_fd(true)?;
+
     unsafe {
         let mut termios = mem::zeroed();
-        wrap_with_result(tcgetattr(STDIN_FILENO, &mut termios))?;
+        wrap_with_result(tcgetattr(fd.raw_fd(), &mut termios))?;
         Ok(termios)
     }
 }
 
 fn set_terminal_attr(termios: &Termios) -> Result<bool> {
-    wrap_with_result(unsafe { tcsetattr(STDIN_FILENO, TCSANOW, termios) })
+    let fd = tty_fd(true)?;
+    wrap_with_result(unsafe { tcsetattr(fd.raw_fd(), TCSANOW, termios) })
 }
 
 pub fn wrap_with_result(result: i32) -> Result<bool> {
