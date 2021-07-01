@@ -101,7 +101,7 @@
 //! use crossterm::{QueueableCommand, cursor};
 //!
 //! let mut stdout = stdout();
-//! stdout.queue(cursor::MoveTo(5,5));
+//! stdout.queue(cursor::MoveTo(cursor::CursorPosition { column: 5, row: 5 }));
 //!
 //! // some other code ...
 //!
@@ -118,7 +118,7 @@
 //! use crossterm::{queue, QueueableCommand, cursor};
 //!
 //! let mut stdout = stdout();
-//! queue!(stdout,  cursor::MoveTo(5, 5));
+//! queue!(stdout,  cursor::MoveTo(cursor::CursorPosition { column: 5, row: 5 }));
 //!
 //! // some other code ...
 //!
@@ -127,7 +127,7 @@
 //! ```
 //!
 //! You can pass more than one command into the [queue](./macro.queue.html) macro like
-//! `queue!(stdout, MoveTo(5, 5), Clear(ClearType::All))` and
+//! `queue!(stdout, MoveTo(CursorPosition { column: 5, row: 5 }), Clear(ClearType::All))` and
 //! they will be executed in the given order from left to right.
 //!
 //! #### Direct Execution
@@ -149,7 +149,7 @@
 //! use crossterm::{ExecutableCommand, cursor};
 //!
 //! let mut stdout = stdout();
-//! stdout.execute(cursor::MoveTo(5,5));
+//! stdout.execute(cursor::MoveTo(cursor::CursorPosition { column: 5, row: 5 }));
 //! ```
 //! The [execute](./trait.ExecutableCommand.html) function returns itself, therefore you can use this to queue
 //! another command. Like `stdout.queue(Goto(5,5)).queue(Clear(ClearType::All))`.
@@ -161,11 +161,11 @@
 //! use crossterm::{execute, ExecutableCommand, cursor};
 //!
 //! let mut stdout = stdout();
-//! execute!(stdout, cursor::MoveTo(5, 5));
+//! execute!(stdout, cursor::MoveTo(cursor::CursorPosition { column: 5, row: 5 }));
 //! ```
 //! You can pass more than one command into the [execute](./macro.execute.html) macro like
-//! `execute!(stdout, MoveTo(5, 5), Clear(ClearType::All))` and they will be executed in the given order from
-//! left to right.
+//! `execute!(stdout, MoveTo(cursor::CursorPosition { column: 5, row: 5 }), Clear(ClearType::All))`
+//! and they will be executed in the given order from left to right.
 //!
 //! ## Examples
 //!
@@ -190,7 +190,7 @@
 //!       if (y == 0 || y == 40 - 1) || (x == 0 || x == 150 - 1) {
 //!         // in this loop we are more efficient by not flushing the buffer.
 //!         stdout
-//!           .queue(cursor::MoveTo(x,y))?
+//!           .queue(cursor::MoveTo(cursor::CursorPosition { column: x, row: y }))?
 //!           .queue(style::PrintStyledContent( "█".magenta()))?;
 //!       }
 //!     }
@@ -218,7 +218,11 @@
 //!     for x in 0..150 {
 //!       if (y == 0 || y == 40 - 1) || (x == 0 || x == 150 - 1) {
 //!         // in this loop we are more efficient by not flushing the buffer.
-//!         queue!(stdout, cursor::MoveTo(x,y), style::PrintStyledContent( "█".magenta()))?;
+//!         queue!(
+//!           stdout,
+//!           cursor::MoveTo(cursor::CursorPosition { column: x, row: y }),
+//!           style::PrintStyledContent("█".magenta())
+//!         )?;
 //!       }
 //!     }
 //!   }

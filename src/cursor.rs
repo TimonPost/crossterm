@@ -16,8 +16,10 @@
 //! use std::io::{stdout, Write};
 //!
 //! use crossterm::{
-//!     ExecutableCommand, execute, Result,
-//!     cursor::{DisableBlinking, EnableBlinking, MoveTo, RestorePosition, SavePosition}
+//!     cursor::{
+//!         CursorPosition, DisableBlinking, EnableBlinking, MoveTo, RestorePosition, SavePosition,
+//!     },
+//!     execute, ExecutableCommand, Result,
 //! };
 //!
 //! fn main() -> Result<()> {
@@ -25,7 +27,7 @@
 //!     execute!(
 //!         stdout(),
 //!         SavePosition,
-//!         MoveTo(10, 10),
+//!         MoveTo(CursorPosition { column: 10, row: 10 }),
 //!         EnableBlinking,
 //!         DisableBlinking,
 //!         RestorePosition
@@ -33,7 +35,7 @@
 //!
 //!   // with function
 //!   stdout()
-//!     .execute(MoveTo(11,11))?
+//!     .execute(MoveTo(CursorPosition { column: 11, row: 11 }))?
 //!     .execute(RestorePosition);
 //!
 //!  Ok(())
@@ -47,28 +49,39 @@ use std::fmt;
 #[cfg(windows)]
 use crate::Result;
 use crate::{csi, impl_display, Command};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 pub use sys::position;
 
 pub(crate) mod sys;
 
-/// A command that moves the terminal cursor to the given position (column, row).
+/// Represents the position of the cursor.
+///
+/// The top left cell is represented as `(0, 0)`.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CursorPosition {
+    pub column: u16,
+    pub row: u16,
+}
+
+/// A command that moves the terminal cursor to the given position.
 ///
 /// # Notes
 ///
-/// * Top left cell is represented as `0,0`.
-/// * Commands must be executed/queued for execution otherwise they do nothing.
+/// Commands must be executed/queued for execution otherwise they do nothing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct MoveTo(pub u16, pub u16);
+pub struct MoveTo(pub CursorPosition);
 
 impl Command for MoveTo {
     fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
-        write!(f, csi!("{};{}H"), self.1 + 1, self.0 + 1)
+        write!(f, csi!("{};{}H"), self.0.row + 1, self.0.column + 1)
     }
 
     #[cfg(windows)]
     fn execute_winapi(&self) -> Result<()> {
-        sys::move_to(self.0, self.1)
+        sys::move_to(self.0)
     }
 }
 
@@ -417,6 +430,7 @@ impl_display!(for SetCursorShape);
 mod tests {
     use std::io::{self, stdout};
 
+    use crate::cursor::CursorPosition;
     use crate::execute;
 
     use super::{
@@ -427,66 +441,91 @@ mod tests {
     #[test]
     #[ignore]
     fn test_move_to() {
-        let (saved_x, saved_y) = position().unwrap();
+        let saved_position = position().unwrap();
 
-        execute!(stdout(), MoveTo(saved_x + 1, saved_y + 1)).unwrap();
-        assert_eq!(position().unwrap(), (saved_x + 1, saved_y + 1));
+        let south_east = CursorPosition {
+            column: saved_position.column + 1,
+            row: saved_position.row + 1,
+        };
+        execute!(stdout(), MoveTo(south_east)).unwrap();
+        assert_eq!(position().unwrap(), south_east);
 
-        execute!(stdout(), MoveTo(saved_x, saved_y)).unwrap();
-        assert_eq!(position().unwrap(), (saved_x, saved_y));
+        execute!(stdout(), MoveTo(saved_position)).unwrap();
+        assert_eq!(position().unwrap(), saved_position);
     }
 
     // Test is disabled, because it's failing on Travis
     #[test]
     #[ignore]
     fn test_move_right() {
-        let (saved_x, saved_y) = position().unwrap();
+        let saved_position = position().unwrap();
         execute!(io::stdout(), MoveRight(1)).unwrap();
-        assert_eq!(position().unwrap(), (saved_x + 1, saved_y));
+        assert_eq!(
+            position().unwrap(),
+            CursorPosition {
+                column: saved_position.column + 1,
+                ..saved_position
+            }
+        );
     }
 
     // Test is disabled, because it's failing on Travis
     #[test]
     #[ignore]
     fn test_move_left() {
-        execute!(stdout(), MoveTo(2, 0), MoveLeft(2)).unwrap();
-        assert_eq!(position().unwrap(), (0, 0));
+        execute!(
+            stdout(),
+            MoveTo(CursorPosition { column: 2, row: 0 }),
+            MoveLeft(2)
+        )
+        .unwrap();
+        assert_eq!(position().unwrap(), CursorPosition { column: 0, row: 0 });
     }
 
     // Test is disabled, because it's failing on Travis
     #[test]
     #[ignore]
     fn test_move_up() {
-        execute!(stdout(), MoveTo(0, 2), MoveUp(2)).unwrap();
-        assert_eq!(position().unwrap(), (0, 0));
+        execute!(
+            stdout(),
+            MoveTo(CursorPosition { column: 0, row: 2 }),
+            MoveUp(2)
+        )
+        .unwrap();
+        assert_eq!(position().unwrap(), CursorPosition { column: 0, row: 0 });
     }
 
     // Test is disabled, because it's failing on Travis
     #[test]
     #[ignore]
     fn test_move_down() {
-        execute!(stdout(), MoveTo(0, 0), MoveDown(2)).unwrap();
+        execute!(
+            stdout(),
+            MoveTo(CursorPosition { column: 0, row: 0 }),
+            MoveDown(2)
+        )
+        .unwrap();
 
-        assert_eq!(position().unwrap(), (0, 2));
+        assert_eq!(position().unwrap(), CursorPosition { column: 0, row: 2 });
     }
 
     // Test is disabled, because it's failing on Travis
     #[test]
     #[ignore]
     fn test_save_restore_position() {
-        let (saved_x, saved_y) = position().unwrap();
+        let saved_position = position().unwrap();
 
         execute!(
             stdout(),
             SavePosition,
-            MoveTo(saved_x + 1, saved_y + 1),
+            MoveTo(CursorPosition {
+                column: saved_position.column + 1,
+                row: saved_position.row + 1
+            }),
             RestorePosition
         )
         .unwrap();
 
-        let (x, y) = position().unwrap();
-
-        assert_eq!(x, saved_x);
-        assert_eq!(y, saved_y);
+        assert_eq!(position().unwrap(), saved_position);
     }
 }

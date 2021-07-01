@@ -12,6 +12,7 @@ use parking_lot::Mutex;
 
 use crate::error::Result;
 use crate::event::sys::unix::file_descriptor::{tty_fd, FileDesc};
+use crate::terminal::TerminalSize;
 
 // Some(Termios) -> we're in the raw mode and this is the previous mode
 // None -> we're not in the raw mode
@@ -22,7 +23,7 @@ pub(crate) fn is_raw_mode_enabled() -> bool {
 }
 
 #[allow(clippy::useless_conversion)]
-pub(crate) fn size() -> Result<(u16, u16)> {
+pub(crate) fn size() -> Result<TerminalSize> {
     // http://rosettacode.org/wiki/Terminal_control/Dimensions#Library:_BSD_libc
     let mut size = winsize {
         ws_row: 0,
@@ -40,7 +41,10 @@ pub(crate) fn size() -> Result<(u16, u16)> {
     };
 
     if wrap_with_result(unsafe { ioctl(fd, TIOCGWINSZ.into(), &mut size) }).is_ok() {
-        Ok((size.ws_col, size.ws_row))
+        Ok(TerminalSize {
+            width: size.ws_col,
+            height: size.ws_row,
+        })
     } else {
         tput_size().ok_or_else(|| std::io::Error::last_os_error().into())
     }
@@ -103,9 +107,9 @@ fn tput_value(arg: &str) -> Option<u16> {
 ///
 /// This alternate way of computing the size is useful
 /// when in a subshell.
-fn tput_size() -> Option<(u16, u16)> {
+fn tput_size() -> Option<TerminalSize> {
     match (tput_value("cols"), tput_value("lines")) {
-        (Some(w), Some(h)) => Some((w, h)),
+        (Some(width), Some(height)) => Some(TerminalSize { width, height }),
         _ => None,
     }
 }

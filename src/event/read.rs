@@ -129,7 +129,7 @@ mod tests {
     use std::io;
     use std::{collections::VecDeque, time::Duration};
 
-    use crate::ErrorKind;
+    use crate::{cursor::CursorPosition, terminal::TerminalSize, ErrorKind};
 
     #[cfg(unix)]
     use super::super::filter::CursorPositionFilter;
@@ -158,7 +158,11 @@ mod tests {
     #[test]
     fn test_poll_returns_true_for_matching_event_in_queue_at_front() {
         let mut reader = InternalEventReader {
-            events: vec![InternalEvent::Event(Event::Resize(10, 10))].into(),
+            events: vec![InternalEvent::Event(Event::Resize(TerminalSize {
+                width: 10,
+                height: 10,
+            }))]
+            .into(),
             source: None,
             skipped_events: Vec::with_capacity(32),
         };
@@ -171,8 +175,14 @@ mod tests {
     fn test_poll_returns_true_for_matching_event_in_queue_at_back() {
         let mut reader = InternalEventReader {
             events: vec![
-                InternalEvent::Event(Event::Resize(10, 10)),
-                InternalEvent::CursorPosition(10, 20),
+                InternalEvent::Event(Event::Resize(TerminalSize {
+                    width: 10,
+                    height: 10,
+                })),
+                InternalEvent::CursorPosition(CursorPosition {
+                    column: 10,
+                    row: 20,
+                }),
             ]
             .into(),
             source: None,
@@ -184,7 +194,10 @@ mod tests {
 
     #[test]
     fn test_read_returns_matching_event_in_queue_at_front() {
-        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(10, 10));
+        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(TerminalSize {
+            width: 10,
+            height: 10,
+        }));
 
         let mut reader = InternalEventReader {
             events: vec![EVENT].into(),
@@ -198,10 +211,20 @@ mod tests {
     #[test]
     #[cfg(unix)]
     fn test_read_returns_matching_event_in_queue_at_back() {
-        const CURSOR_EVENT: InternalEvent = InternalEvent::CursorPosition(10, 20);
+        const CURSOR_EVENT: InternalEvent = InternalEvent::CursorPosition(CursorPosition {
+            column: 10,
+            row: 20,
+        });
 
         let mut reader = InternalEventReader {
-            events: vec![InternalEvent::Event(Event::Resize(10, 10)), CURSOR_EVENT].into(),
+            events: vec![
+                InternalEvent::Event(Event::Resize(TerminalSize {
+                    width: 10,
+                    height: 10,
+                })),
+                CURSOR_EVENT,
+            ]
+            .into(),
             source: None,
             skipped_events: Vec::with_capacity(32),
         };
@@ -212,8 +235,14 @@ mod tests {
     #[test]
     #[cfg(unix)]
     fn test_read_does_not_consume_skipped_event() {
-        const SKIPPED_EVENT: InternalEvent = InternalEvent::Event(Event::Resize(10, 10));
-        const CURSOR_EVENT: InternalEvent = InternalEvent::CursorPosition(10, 20);
+        const SKIPPED_EVENT: InternalEvent = InternalEvent::Event(Event::Resize(TerminalSize {
+            width: 10,
+            height: 10,
+        }));
+        const CURSOR_EVENT: InternalEvent = InternalEvent::CursorPosition(CursorPosition {
+            column: 10,
+            row: 20,
+        });
 
         let mut reader = InternalEventReader {
             events: vec![SKIPPED_EVENT, CURSOR_EVENT].into(),
@@ -242,7 +271,11 @@ mod tests {
 
     #[test]
     fn test_poll_returns_true_if_source_has_at_least_one_event() {
-        let source = FakeSource::with_events(&[InternalEvent::Event(Event::Resize(10, 10))]);
+        let source =
+            FakeSource::with_events(&[InternalEvent::Event(Event::Resize(TerminalSize {
+                width: 10,
+                height: 10,
+            }))]);
 
         let mut reader = InternalEventReader {
             events: VecDeque::new(),
@@ -258,7 +291,10 @@ mod tests {
 
     #[test]
     fn test_reads_returns_event_if_source_has_at_least_one_event() {
-        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(10, 10));
+        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(TerminalSize {
+            width: 10,
+            height: 10,
+        }));
 
         let source = FakeSource::with_events(&[EVENT]);
 
@@ -273,7 +309,10 @@ mod tests {
 
     #[test]
     fn test_read_returns_events_if_source_has_events() {
-        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(10, 10));
+        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(TerminalSize {
+            width: 10,
+            height: 10,
+        }));
 
         let source = FakeSource::with_events(&[EVENT, EVENT, EVENT]);
 
@@ -290,7 +329,10 @@ mod tests {
 
     #[test]
     fn test_poll_returns_false_after_all_source_events_are_consumed() {
-        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(10, 10));
+        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(TerminalSize {
+            width: 10,
+            height: 10,
+        }));
 
         let source = FakeSource::with_events(&[EVENT, EVENT, EVENT]);
 
@@ -348,7 +390,10 @@ mod tests {
 
     #[test]
     fn test_poll_continues_after_error() {
-        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(10, 10));
+        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(TerminalSize {
+            width: 10,
+            height: 10,
+        }));
 
         let source = FakeSource::new(&[EVENT, EVENT], ErrorKind::from(io::ErrorKind::Other));
 
@@ -367,7 +412,10 @@ mod tests {
 
     #[test]
     fn test_read_continues_after_error() {
-        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(10, 10));
+        const EVENT: InternalEvent = InternalEvent::Event(Event::Resize(TerminalSize {
+            width: 10,
+            height: 10,
+        }));
 
         let source = FakeSource::new(&[EVENT, EVENT], ErrorKind::from(io::ErrorKind::Other));
 

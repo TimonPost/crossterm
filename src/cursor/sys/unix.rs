@@ -4,15 +4,14 @@ use std::{
 };
 
 use crate::{
+    cursor::CursorPosition,
     event::{filter::CursorPositionFilter, poll_internal, read_internal, InternalEvent},
     terminal::{disable_raw_mode, enable_raw_mode, sys::is_raw_mode_enabled},
     Result,
 };
 
-/// Returns the cursor position (column, row).
-///
-/// The top left cell is represented `0,0`.
-pub fn position() -> Result<(u16, u16)> {
+/// Returns the cursor position.
+pub fn position() -> Result<CursorPosition> {
     if is_raw_mode_enabled() {
         read_position_raw()
     } else {
@@ -20,14 +19,14 @@ pub fn position() -> Result<(u16, u16)> {
     }
 }
 
-fn read_position() -> Result<(u16, u16)> {
+fn read_position() -> Result<CursorPosition> {
     enable_raw_mode()?;
     let pos = read_position_raw();
     disable_raw_mode()?;
     pos
 }
 
-fn read_position_raw() -> Result<(u16, u16)> {
+fn read_position_raw() -> Result<CursorPosition> {
     // Use `ESC [ 6 n` to and retrieve the cursor position.
     let mut stdout = io::stdout();
     stdout.write_all(b"\x1B[6n")?;
@@ -36,10 +35,10 @@ fn read_position_raw() -> Result<(u16, u16)> {
     loop {
         match poll_internal(Some(Duration::from_millis(2000)), &CursorPositionFilter) {
             Ok(true) => {
-                if let Ok(InternalEvent::CursorPosition(x, y)) =
+                if let Ok(InternalEvent::CursorPosition(position)) =
                     read_internal(&CursorPositionFilter)
                 {
-                    return Ok((x, y));
+                    return Ok(position);
                 }
             }
             Ok(false) => {

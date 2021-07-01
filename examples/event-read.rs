@@ -9,7 +9,7 @@ use crossterm::{
     cursor::position,
     event::{read, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode},
+    terminal::{disable_raw_mode, enable_raw_mode, TerminalSize},
     Result,
 };
 use std::time::Duration;
@@ -31,7 +31,7 @@ fn print_events() -> Result<()> {
             println!("Cursor position: {:?}\r", position());
         }
 
-        if let Event::Resize(_, _) = event {
+        if let Event::Resize(_) = event {
             let (original_size, new_size) = flush_resize_events(event);
             println!("Resize from: {:?}, to: {:?}", original_size, new_size);
         }
@@ -47,18 +47,28 @@ fn print_events() -> Result<()> {
 // Resize events can occur in batches.
 // With a simple loop they can be flushed.
 // This function will keep the first and last resize event.
-fn flush_resize_events(event: Event) -> ((u16, u16), (u16, u16)) {
-    if let Event::Resize(x, y) = event {
-        let mut last_resize = (x, y);
+fn flush_resize_events(event: Event) -> (TerminalSize, TerminalSize) {
+    if let Event::Resize(size) = event {
+        let mut last_resize = size;
         while let Ok(true) = poll(Duration::from_millis(50)) {
-            if let Ok(Event::Resize(x, y)) = read() {
-                last_resize = (x, y);
+            if let Ok(Event::Resize(size)) = read() {
+                last_resize = size;
             }
         }
 
-        return ((x, y), last_resize);
+        return (size, last_resize);
     }
-    ((0, 0), (0, 0))
+
+    (
+        TerminalSize {
+            width: 0,
+            height: 0,
+        },
+        TerminalSize {
+            width: 0,
+            height: 0,
+        },
+    )
 }
 
 fn main() -> Result<()> {

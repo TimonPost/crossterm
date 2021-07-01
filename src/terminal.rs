@@ -61,20 +61,24 @@
 //! ## Examples
 //!
 //! ```no_run
+//! use crossterm::{
+//!     execute,
+//!     terminal::{size, ScrollUp, SetSize, TerminalSize},
+//!     Result,
+//! };
 //! use std::io::{stdout, Write};
-//! use crossterm::{execute, Result, terminal::{ScrollUp, SetSize, size}};
 //!
 //! fn main() -> Result<()> {
-//!     let (cols, rows) = size()?;
+//!     let size = size()?;
 //!     // Resize terminal and scroll up.
 //!     execute!(
 //!         stdout(),
-//!         SetSize(10, 10),
+//!         SetSize(TerminalSize { width: 10, height: 10 }),
 //!         ScrollUp(5)
 //!     )?;
 //!
 //!     // Be a good citizen, cleanup
-//!     execute!(stdout(), SetSize(cols, rows))?;
+//!     execute!(stdout(), SetSize(size))?;
 //!     Ok(())
 //! }
 //! ```
@@ -110,11 +114,21 @@ pub fn disable_raw_mode() -> Result<()> {
     sys::disable_raw_mode()
 }
 
-/// Returns the terminal size `(columns, rows)`.
+/// Returns the terminal size.
 ///
 /// The top left cell is represented `(1, 1)`.
-pub fn size() -> Result<(u16, u16)> {
+pub fn size() -> Result<TerminalSize> {
     sys::size()
+}
+
+/// Represents the size of the terminal window.
+///
+/// A window with one column and one row is represented as `TerminalSize { width: 1, height: 1 }`.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TerminalSize {
+    pub width: u16,
+    pub height: u16,
 }
 
 /// Disables line wrapping.
@@ -318,22 +332,22 @@ impl Command for Clear {
     }
 }
 
-/// A command that sets the terminal size `(columns, rows)`.
+/// A command that sets the terminal size.
 ///
 /// # Notes
 ///
 /// Commands must be executed/queued for execution otherwise they do nothing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct SetSize(pub u16, pub u16);
+pub struct SetSize(pub TerminalSize);
 
 impl Command for SetSize {
     fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
-        write!(f, csi!("8;{};{}t"), self.1, self.0)
+        write!(f, csi!("8;{};{}t"), self.0.height, self.0.width)
     }
 
     #[cfg(windows)]
     fn execute_winapi(&self) -> Result<()> {
-        sys::set_size(self.0, self.1)
+        sys::set_size(self.0)
     }
 }
 
@@ -365,7 +379,7 @@ impl_display!(for Clear);
 mod tests {
     use std::{io::stdout, thread, time};
 
-    use crate::execute;
+    use crate::{execute, terminal::TerminalSize};
 
     use super::{size, SetSize};
 
@@ -373,21 +387,34 @@ mod tests {
     #[test]
     #[ignore]
     fn test_resize_ansi() {
-        let (width, height) = size().unwrap();
+        let terminal_size = size().unwrap();
 
-        execute!(stdout(), SetSize(35, 35)).unwrap();
+        execute!(
+            stdout(),
+            SetSize(TerminalSize {
+                width: 35,
+                height: 35
+            })
+        )
+        .unwrap();
 
         // see issue: https://github.com/eminence/terminal-size/issues/11
         thread::sleep(time::Duration::from_millis(30));
 
-        assert_eq!((35, 35), size().unwrap());
+        assert_eq!(
+            TerminalSize {
+                width: 35,
+                height: 35
+            },
+            size().unwrap()
+        );
 
         // reset to previous size
-        execute!(stdout(), SetSize(width, height)).unwrap();
+        execute!(stdout(), SetSize(terminal_size)).unwrap();
 
         // see issue: https://github.com/eminence/terminal-size/issues/11
         thread::sleep(time::Duration::from_millis(30));
 
-        assert_eq!((width, height), size().unwrap());
+        assert_eq!(terminal_size, size().unwrap());
     }
 }

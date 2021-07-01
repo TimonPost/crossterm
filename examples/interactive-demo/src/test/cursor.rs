@@ -3,7 +3,7 @@
 use std::io::Write;
 
 use crate::Result;
-use crossterm::{cursor, execute, queue, style, Command, style::Stylize};
+use crossterm::{cursor, execute, queue, style, style::Stylize, Command};
 use std::thread;
 use std::time::Duration;
 
@@ -112,13 +112,13 @@ where
     W: Write,
 {
     execute!(w,
-        cursor::MoveTo(0, 0),
+        cursor::MoveTo(CursorPosition { column: 0, row: 0 }),
         style::Print("Save position, print character else were, after three seconds restore to old position."),
         cursor::MoveToNextLine(2),
         style::Print("Save ->[ ]<- Position"),
-        cursor::MoveTo(8, 2),
+        cursor::MoveTo(CursorPosition { column: 8, row: 2 }),
         cursor::SavePosition,
-        cursor::MoveTo(10,10),
+        cursor::MoveTo(CursorPosition { column: 10, row: 10 }),
         style::Print("Move To ->[√]<- Position")
     )?;
 
@@ -137,7 +137,7 @@ where
     execute!(
         w,
         cursor::Hide,
-        cursor::MoveTo(0, 0),
+        cursor::MoveTo(CursorPosition { column: 0, row: 0 }),
         style::SetForegroundColor(style::Color::Red),
         style::Print(format!(
             "Red box is the center. After the action: '{}' another box is drawn.",

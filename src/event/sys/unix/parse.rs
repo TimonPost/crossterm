@@ -1,6 +1,7 @@
 use std::io;
 
 use crate::{
+    cursor::CursorPosition,
     event::{Event, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     ErrorKind, Result,
 };
@@ -193,10 +194,13 @@ pub(crate) fn parse_csi_cursor_position(buffer: &[u8]) -> Result<Option<Internal
 
     let mut split = s.split(';');
 
-    let y = next_parsed::<u16>(&mut split)? - 1;
-    let x = next_parsed::<u16>(&mut split)? - 1;
+    let row = next_parsed::<u16>(&mut split)? - 1;
+    let column = next_parsed::<u16>(&mut split)? - 1;
 
-    Ok(Some(InternalEvent::CursorPosition(x, y)))
+    Ok(Some(InternalEvent::CursorPosition(CursorPosition {
+        column,
+        row,
+    })))
 }
 
 fn parse_modifiers(mask: u8) -> KeyModifiers {
@@ -524,7 +528,10 @@ mod tests {
         // parse_csi_cursor_position
         assert_eq!(
             parse_event(b"\x1B[20;10R", false).unwrap(),
-            Some(InternalEvent::CursorPosition(9, 19))
+            Some(InternalEvent::CursorPosition(CursorPosition {
+                column: 9,
+                row: 19
+            }))
         );
 
         // parse_csi
@@ -603,7 +610,10 @@ mod tests {
     fn test_parse_csi_cursor_position() {
         assert_eq!(
             parse_csi_cursor_position(b"\x1B[20;10R").unwrap(),
-            Some(InternalEvent::CursorPosition(9, 19))
+            Some(InternalEvent::CursorPosition(CursorPosition {
+                column: 9,
+                row: 19
+            }))
         );
     }
 

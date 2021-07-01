@@ -12,7 +12,7 @@ macro_rules! run_tests {
                 $dst,
                 style::ResetColor,
                 terminal::Clear(terminal::ClearType::All),
-                cursor::MoveTo(1, 1),
+                cursor::MoveTo(cursor::CursorPosition { column: 1, row: 1 }),
                 cursor::Show,
                 cursor::EnableBlinking
             )?;

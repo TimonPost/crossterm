@@ -11,7 +11,7 @@
 use std::io::{stderr, Write};
 
 use crossterm::{
-    cursor::{Hide, MoveTo, Show},
+    cursor::{CursorPosition, Hide, MoveTo, Show},
     event,
     event::{Event, KeyCode, KeyEvent},
     execute, queue,
@@ -58,7 +58,11 @@ where
 
     let mut y = 1;
     for line in TEXT.split('\n') {
-        queue!(write, MoveTo(1, y), Print(line.to_string()))?;
+        queue!(
+            write,
+            MoveTo(CursorPosition { column: 1, row: y }),
+            Print(line.to_string())
+        )?;
         y += 1;
     }
 

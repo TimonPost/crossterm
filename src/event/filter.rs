@@ -13,7 +13,7 @@ pub(crate) struct CursorPositionFilter;
 #[cfg(unix)]
 impl Filter for CursorPositionFilter {
     fn eval(&self, event: &InternalEvent) -> bool {
-        matches!(*event, InternalEvent::CursorPosition(_, _))
+        matches!(*event, InternalEvent::CursorPosition(_))
     }
 }
 
@@ -47,22 +47,54 @@ mod tests {
     use super::{
         super::Event, CursorPositionFilter, EventFilter, Filter, InternalEvent, InternalEventFilter,
     };
+    use crate::cursor::CursorPosition;
+    use crate::terminal::TerminalSize;
 
     #[test]
     fn test_cursor_position_filter_filters_cursor_position() {
-        assert!(!CursorPositionFilter.eval(&InternalEvent::Event(Event::Resize(10, 10))));
-        assert!(CursorPositionFilter.eval(&InternalEvent::CursorPosition(0, 0)));
+        assert!(
+            !CursorPositionFilter.eval(&InternalEvent::Event(Event::Resize(TerminalSize {
+                width: 10,
+                height: 10
+            })))
+        );
+        assert!(
+            CursorPositionFilter.eval(&InternalEvent::CursorPosition(CursorPosition {
+                column: 0,
+                row: 0
+            }))
+        );
     }
 
     #[test]
     fn test_event_filter_filters_events() {
-        assert!(EventFilter.eval(&InternalEvent::Event(Event::Resize(10, 10))));
-        assert!(!EventFilter.eval(&InternalEvent::CursorPosition(0, 0)));
+        assert!(
+            EventFilter.eval(&InternalEvent::Event(Event::Resize(TerminalSize {
+                width: 10,
+                height: 10
+            })))
+        );
+        assert!(
+            !EventFilter.eval(&InternalEvent::CursorPosition(CursorPosition {
+                column: 0,
+                row: 0
+            }))
+        );
     }
 
     #[test]
     fn test_event_filter_filters_internal_events() {
-        assert!(InternalEventFilter.eval(&InternalEvent::Event(Event::Resize(10, 10))));
-        assert!(InternalEventFilter.eval(&InternalEvent::CursorPosition(0, 0)));
+        assert!(
+            InternalEventFilter.eval(&InternalEvent::Event(Event::Resize(TerminalSize {
+                width: 10,
+                height: 10
+            })))
+        );
+        assert!(
+            InternalEventFilter.eval(&InternalEvent::CursorPosition(CursorPosition {
+                column: 0,
+                row: 0
+            }))
+        );
     }
 }

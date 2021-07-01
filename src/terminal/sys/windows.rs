@@ -9,7 +9,11 @@ use winapi::{
     um::wincon::{SetConsoleTitleW, ENABLE_ECHO_INPUT, ENABLE_LINE_INPUT, ENABLE_PROCESSED_INPUT},
 };
 
-use crate::{cursor, terminal::ClearType, ErrorKind, Result};
+use crate::{
+    cursor,
+    terminal::{ClearType, TerminalSize},
+    ErrorKind, Result,
+};
 
 const RAW_MODE_MASK: DWORD = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT;
 
@@ -37,13 +41,13 @@ pub(crate) fn disable_raw_mode() -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn size() -> Result<(u16, u16)> {
+pub(crate) fn size() -> Result<TerminalSize> {
     let terminal_size = ScreenBuffer::current()?.info()?.terminal_size();
     // windows starts counting at 0, unix at 1, add one to replicated unix behaviour.
-    Ok((
-        (terminal_size.width + 1) as u16,
-        (terminal_size.height + 1) as u16,
-    ))
+    Ok(TerminalSize {
+        width: (terminal_size.width + 1) as u16,
+        height: (terminal_size.height + 1) as u16,
+    })
 }
 
 pub(crate) fn clear(clear_type: ClearType) -> Result<()> {
@@ -98,7 +102,7 @@ pub(crate) fn scroll_down(row_count: u16) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn set_size(width: u16, height: u16) -> Result<()> {
+pub(crate) fn set_size(TerminalSize { width, height }: TerminalSize) -> Result<()> {
     if width <= 1 {
         return Err(ErrorKind::new(
             io::ErrorKind::InvalidInput,

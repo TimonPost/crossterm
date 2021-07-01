@@ -28,7 +28,10 @@
 //! Blocking read:
 //!
 //! ```no_run
-//! use crossterm::event::{read, Event};
+//! use crossterm::{
+//!     event::{read, Event},
+//!     terminal::TerminalSize,
+//! };
 //!
 //! fn print_events() -> crossterm::Result<()> {
 //!     loop {
@@ -36,7 +39,9 @@
 //!         match read()? {
 //!             Event::Key(event) => println!("{:?}", event),
 //!             Event::Mouse(event) => println!("{:?}", event),
-//!             Event::Resize(width, height) => println!("New size {}x{}", width, height),
+//!             Event::Resize(TerminalSize { width, height }) => {
+//!                 println!("New size {}x{}", width, height)
+//!             }
 //!         }
 //!     }
 //!     Ok(())
@@ -48,7 +53,10 @@
 //! ```no_run
 //! use std::time::Duration;
 //!
-//! use crossterm::event::{poll, read, Event};
+//! use crossterm::{
+//!     event::{poll, read, Event},
+//!     terminal::TerminalSize,
+//! };
 //!
 //! fn print_events() -> crossterm::Result<()> {
 //!     loop {
@@ -59,7 +67,9 @@
 //!             match read()? {
 //!                 Event::Key(event) => println!("{:?}", event),
 //!                 Event::Mouse(event) => println!("{:?}", event),
-//!                 Event::Resize(width, height) => println!("New size {}x{}", width, height),
+//!                 Event::Resize(TerminalSize { width, height }) => {
+//!                     println!("New size {}x{}", width, height)
+//!                 }
 //!             }
 //!         } else {
 //!             // Timeout expired and no `Event` is available
@@ -81,6 +91,8 @@ use parking_lot::{MappedMutexGuard, Mutex, MutexGuard};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate::cursor::CursorPosition;
+use crate::terminal::TerminalSize;
 use crate::{csi, Command, Result};
 use filter::{EventFilter, Filter};
 use read::InternalEventReader;
@@ -302,9 +314,9 @@ pub enum Event {
     Key(KeyEvent),
     /// A single mouse event with additional pressed modifiers.
     Mouse(MouseEvent),
-    /// An resize event with new dimensions after resize (columns, rows).
+    /// An resize event with new dimensions after resize.
     /// **Note** that resize events can be occur in batches.
-    Resize(u16, u16),
+    Resize(TerminalSize),
 }
 
 /// Represents a mouse event.
@@ -504,9 +516,9 @@ pub enum KeyCode {
 pub(crate) enum InternalEvent {
     /// An event.
     Event(Event),
-    /// A cursor position (`col`, `row`).
+    /// A cursor position.
     #[cfg(unix)]
-    CursorPosition(u16, u16),
+    CursorPosition(CursorPosition),
 }
 
 #[cfg(test)]

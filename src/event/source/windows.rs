@@ -44,7 +44,10 @@ impl EventSource for WindowsEventSource {
                         InputRecord::KeyEvent(record) => handle_key_event(record),
                         InputRecord::MouseEvent(record) => handle_mouse_event(record),
                         InputRecord::WindowBufferSizeEvent(record) => {
-                            Some(Event::Resize(record.size.x as u16, record.size.y as u16))
+                            Some(Event::Resize(TerminalSize {
+                                width: record.size.x as u16,
+                                height: record.size.y as u16,
+                            }))
                         }
                         _ => None,
                     };

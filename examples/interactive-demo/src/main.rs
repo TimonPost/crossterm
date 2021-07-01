@@ -45,7 +45,7 @@ where
             style::ResetColor,
             terminal::Clear(ClearType::All),
             cursor::Hide,
-            cursor::MoveTo(1, 1)
+            cursor::MoveTo(cursor::CursorPosition { column: 1, row: 1 })
         )?;
 
         for line in MENU.split('\n') {

@@ -108,7 +108,10 @@ where
     for idx in 0..=15 {
         queue!(
             w,
-            cursor::MoveTo(1, idx + 4),
+            cursor::MoveTo(cursor::CursorPosition {
+                column: 1,
+                row: idx + 4
+            }),
             style::Print(format!("{:>width$}", idx, width = 2))
         )?;
         queue!(
@@ -119,7 +122,13 @@ where
     }
 
     for row in 0..=15u16 {
-        queue!(w, cursor::MoveTo(4, row + 4))?;
+        queue!(
+            w,
+            cursor::MoveTo(cursor::CursorPosition {
+                column: 4,
+                row: row + 4
+            })
+        )?;
         for col in 0..=15u16 {
             queue!(
                 w,

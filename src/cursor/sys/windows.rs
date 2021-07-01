@@ -10,7 +10,7 @@ use winapi::{
     um::wincon::{SetConsoleCursorInfo, SetConsoleCursorPosition, CONSOLE_CURSOR_INFO, COORD},
 };
 
-use crate::Result;
+use crate::{cursor::CursorPosition, Result};
 
 /// The position of the cursor, written when you save the cursor's position.
 ///
@@ -34,23 +34,23 @@ pub fn parse_relative_y(y: i16) -> Result<i16> {
     }
 }
 
-/// Returns the cursor position (column, row).
-///
-/// The top left cell is represented `0,0`.
-pub fn position() -> Result<(u16, u16)> {
+/// Returns the cursor position.
+pub fn position() -> Result<CursorPosition> {
     let cursor = ScreenBufferCursor::output()?;
     let mut position = cursor.position()?;
     //    if position.y != 0 {
     position.y = parse_relative_y(position.y)?;
     //    }
-    Ok(position.into())
+
+    let (column, row) = position.into();
+    Ok(CursorPosition { column, row })
 }
 
 pub(crate) fn show_cursor(show_cursor: bool) -> Result<()> {
     ScreenBufferCursor::from(Handle::current_out_handle()?).set_visibility(show_cursor)
 }
 
-pub(crate) fn move_to(column: u16, row: u16) -> Result<()> {
+pub(crate) fn move_to(CursorPosition { column, row }: CursorPosition) -> Result<()> {
     let cursor = ScreenBufferCursor::output()?;
     cursor.move_to(column as i16, row as i16)?;
     Ok(())

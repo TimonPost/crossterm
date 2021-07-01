@@ -138,9 +138,7 @@ impl EventSource for UnixInternalEventSource {
                                     // it's a really long time from the mio, async-std/tokio executor, ...
                                     // point of view.
                                     let new_size = crate::terminal::size()?;
-                                    return Ok(Some(InternalEvent::Event(Event::Resize(
-                                        new_size.0, new_size.1,
-                                    ))));
+                                    return Ok(Some(InternalEvent::Event(Event::Resize(new_size))));
                                 }
                                 _ => unreachable!("Synchronize signal registration & handling"),
                             };
