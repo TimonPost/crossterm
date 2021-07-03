@@ -122,7 +122,25 @@ impl EventSource for UnixInternalEventSource {
                             };
 
                             if let Some(event) = self.parser.next() {
-                                return Ok(Some(event));
+                                if event == InternalEvent::BracketedPasteStart {
+                                    let mut buffer = vec![];
+                                    while let Some(event) = self.parser.next() {
+                                        if event == InternalEvent::BracketedPasteEnd {
+                                            return Ok(Some(InternalEvent::Event(
+                                                Event::PasteEvents(buffer.drain(..).collect()),
+                                            )));
+                                        } else if let InternalEvent::Event(event) = event {
+                                            buffer.push(event);
+                                        } else {
+                                            // Speculation: Events between BracketedPasteStart and
+                                            // BracketedPasteEnd are guarentteed to be
+                                            // InternalEvent::Event::Char
+                                            unreachable!();
+                                        }
+                                    }
+                                } else {
+                                    return Ok(Some(event));
+                                }
                             }
                         }
                     }

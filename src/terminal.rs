@@ -117,6 +117,36 @@ pub fn size() -> Result<(u16, u16)> {
     sys::size()
 }
 
+/// Enable  BracketedPaste mode
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EnableBracketPasteMode;
+
+impl Command for EnableBracketPasteMode {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        f.write_str(csi!("?2004h"))
+    }
+
+    #[cfg(windows)]
+    fn execute_winapi(&self, _writer: impl FnMut() -> Result<()>) -> Result<()> {
+        todo!();
+    }
+}
+
+/// Disable  BracketedPaste mode
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DisableBracketPasteMode;
+
+impl Command for DisableBracketPasteMode {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        f.write_str(csi!("?2004l"))
+    }
+
+    #[cfg(windows)]
+    fn execute_winapi(&self, _writer: impl FnMut() -> Result<()>) -> Result<()> {
+        todo!();
+    }
+}
+
 /// Disables line wrapping.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DisableLineWrap;

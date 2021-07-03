@@ -156,6 +156,14 @@ pub(crate) fn parse_csi(buffer: &[u8]) -> Result<Option<InternalEvent>> {
                 if !(64..=126).contains(&last_byte) {
                     None
                 } else {
+                    if &buffer[..6] == b"\x1b[200~" {
+                        // bracketed paste start
+                        return Ok(Some(InternalEvent::BracketedPasteStart));
+                    }
+                    if &buffer[..6] == b"\x1b[201~" {
+                        // bracketed paste end
+                        return Ok(Some(InternalEvent::BracketedPasteEnd));
+                    }
                     match buffer[buffer.len() - 1] {
                         b'M' => return parse_csi_rxvt_mouse(buffer),
                         b'~' => return parse_csi_special_key_code(buffer),

@@ -296,7 +296,7 @@ impl Command for DisableMouseCapture {
 
 /// Represents an event.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, PartialOrd, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialOrd, PartialEq, Eq, Clone, Hash)]
 pub enum Event {
     /// A single key event with additional pressed modifiers.
     Key(KeyEvent),
@@ -305,6 +305,7 @@ pub enum Event {
     /// An resize event with new dimensions after resize (columns, rows).
     /// **Note** that resize events can be occur in batches.
     Resize(u16, u16),
+    PasteEvents(Vec<Event>),
 }
 
 /// Represents a mouse event.
@@ -507,6 +508,8 @@ pub(crate) enum InternalEvent {
     /// A cursor position (`col`, `row`).
     #[cfg(unix)]
     CursorPosition(u16, u16),
+    BracketedPasteStart,
+    BracketedPasteEnd,
 }
 
 #[cfg(test)]
