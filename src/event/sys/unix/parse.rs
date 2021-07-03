@@ -82,6 +82,21 @@ pub(crate) fn parse_event(buffer: &[u8], input_available: bool) -> Result<Option
         b'\x7F' => Ok(Some(InternalEvent::Event(Event::Key(
             KeyCode::Backspace.into(),
         )))),
+        // Backspace control code
+        b'\x08' => Ok(Some(InternalEvent::Event(Event::Key(KeyEvent::new(
+            KeyCode::Backspace,
+            KeyModifiers::NONE,
+        ))))),
+        // Linefeed control code
+        b'\x0a' => Ok(Some(InternalEvent::Event(Event::Key(KeyEvent::new(
+            KeyCode::Enter,
+            KeyModifiers::NONE,
+        ))))),
+        // 'Delete word' control code
+        b'\x17' => Ok(Some(InternalEvent::Event(Event::Key(KeyEvent::new(
+            KeyCode::Backspace,
+            KeyModifiers::CONTROL,
+        ))))),
         c @ b'\x01'..=b'\x1A' => Ok(Some(InternalEvent::Event(Event::Key(KeyEvent::new(
             KeyCode::Char((c as u8 - 0x1 + b'a') as char),
             KeyModifiers::CONTROL,
