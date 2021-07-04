@@ -15,7 +15,7 @@
 //! * use the [`read`](fn.read.html) & [`poll`](fn.poll.html) functions on any, but same, thread
 //! * or the [`EventStream`](struct.EventStream.html).
 //!
-//! **Make sure to enable raw mode in order for keyboard events to work properly**
+//! **Make sure to enable [raw mode](../terminal/#raw-mode) in order for keyboard events to work properly**
 //!
 //! ## Mouse Events
 //!

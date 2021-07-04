@@ -58,6 +58,8 @@
 //! - Special keys like backspace and CTL+C will not be processed by terminal driver
 //! - New line character will not be processed therefore `println!` can't be used, use `write!` instead
 //!
+//! Raw mode can be enabled/disabled with the [enable_raw_mode](terminal::enable_raw_mode) and [disable_raw_mode](terminal::disable_raw_mode) functions.
+//!
 //! ## Examples
 //!
 //! ```no_run
